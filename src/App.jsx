@@ -6,6 +6,8 @@ import Profile from "./pages/Profile";
 import Feed from "./pages/Feed";
 import Friends from "./pages/Friends";
 import Posts from "./pages/Posts";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css'
 
 function App() {
   
@@ -26,6 +28,7 @@ function App() {
 
   return (
     <>
+      <ToastContainer />
       <RouterProvider router={router} />
     </>
   )
