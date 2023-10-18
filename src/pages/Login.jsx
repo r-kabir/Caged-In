@@ -4,6 +4,9 @@ import {Button, Box, TextField, CircularProgress, Alert, Stack} from '@mui/mater
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import logo from "../assets/Logo.png"
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { useDispatch } from 'react-redux';
+import { reduxuserdata } from '../slices/user/userSlice'
 
 let bokInitialValues = {
   email:"",
@@ -13,6 +16,9 @@ let bokInitialValues = {
 }
 
 const Login = () => {
+  const auth = getAuth();
+  let bokNavigate = useNavigate();
+  let dispatch = useDispatch();
   let [bokValues, setBokValues] = useState(bokInitialValues);
 
   let handleBokBokValues = (e) => {
@@ -23,7 +29,7 @@ const Login = () => {
   }
 
   let handleSubmit =()=> {
-    let {email, fullName, password} = bokValues;
+    let {email, password} = bokValues;
 
     if(!email){
       setBokValues({
@@ -41,12 +47,55 @@ const Login = () => {
       ...bokValues,
       loading : true
     })
+    signInWithEmailAndPassword(auth, email, password).then((bokuser)=>{
+      setBokValues({
+        email:"",
+        password:"",
+        loading : false
+      })
+      if(bokuser.user.emailVerified)
+        {
+          dispatch(reduxuserdata(bokuser.user));
+          localStorage.setItem("localuserdata", JSON.stringify(bokuser.user))
+          bokNavigate("/caged-in");
+        }
+      else{
+        toast("Please Verifiy Your Email Address")
+        setBokValues({
+        ...bokValues,
+        password:"",
+        loading: false
+        })
+      };
+    }).catch((error) => {
+      const errorCode = error.code;
+
+      if(errorCode.includes("auth/wrong-password")){
+        setBokValues({
+        ...bokValues,
+        password:"",
+        loading: false
+        })
+        toast("!!Wrong Password!!")
+        
+      }
+      if(errorCode.includes("auth/user-not-found")){
+        setBokValues({
+        ...bokValues,
+        email:"",
+        password:"",
+        loading: false
+        })
+        toast("!!You Are Not Registered Yet!!")
+        
+      }
+    });
   }
   return (
     <>
       <Box sx={{height:"100vh", display:"flex", alignItems:"center", justifyContent:"center", backgroundColor:"cornsilk"}}>
         <Stack spacing={3} boxShadow={4} sx={{padding:"5vh"}}>
-          <img src={logo} height={70} width={70}/>
+          <img src={logo} height={65} width={65}/>
           <h2>Login</h2>
           <p>Free Registration And You Can Enjoy It !!</p>
           <TextField onChange={handleBokBokValues} value ={bokValues.email} name="email" label="Email Address" variant="outlined" color='warning' />

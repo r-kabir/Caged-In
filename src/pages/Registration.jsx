@@ -4,6 +4,8 @@ import {Button, Box, TextField, CircularProgress, Alert, Stack} from '@mui/mater
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import logo from "../assets/Logo.png"
+import { getAuth, createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from "firebase/auth";
+import { getDatabase, ref, set } from "firebase/database";
 
 let bokInitialValues = {
   email:"",
@@ -14,6 +16,9 @@ let bokInitialValues = {
 }
 
 const Registration = () => {
+  const auth = getAuth();
+  const db = getDatabase();
+  let bokNavigate = useNavigate();
   let [bokValues, setBokValues] = useState(bokInitialValues);
 
   let handleBokBokValues = (e) => {
@@ -48,12 +53,40 @@ const Registration = () => {
       ...bokValues,
       loading : true
     })
+    createUserWithEmailAndPassword(auth, email, password).then((bokuser)=>{
+      
+      updateProfile(auth.currentUser, {
+        displayName: bokValues.fullName
+      }).then(() => {
+        sendEmailVerification(auth.currentUser).then(() => {
+          console.log('verify email sent');
+          console.log(bokuser);
+          set(ref(db, 'bokbokUsers/'+bokuser.user.uid), {
+            username: bokValues.fullName,
+            email: bokValues.email,
+          });
+        });
+      })
+      setBokValues({
+        email:"",
+        fullName:"",
+        password:"",
+        loading : false
+      });
+      toast("Registration Successful. Please Cheak Your Email");
+      bokNavigate("/login");
+    }).catch((error) => {
+      const errorCode = error.code;
+      const errorMessage = error.message;
+      console.log(errorCode);
+      console.log(errorMessage);
+    });
   }
   return (
     <>
       <Box sx={{height:"100vh", display:"flex", alignItems:"center", justifyContent:"center", backgroundColor:"cornsilk"}}>
         <Stack spacing={3} boxShadow={4} sx={{padding:"5vh"}}>
-          <img src={logo} height={70} width={70}/>
+          <img src={logo} height={65} width={65}/>
           <h2>Get Started With Easy Registration !</h2>
           <p>Free Registration And You Can Enjoy It !!</p>
           <TextField onChange={handleBokBokValues} value ={bokValues.email} name="email" label="Email Address" variant="outlined" color='warning' />
